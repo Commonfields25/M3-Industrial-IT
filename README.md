@@ -1,10 +1,27 @@
-# M3-Industrial-IT
-Répertoire du travail collaboratif sur le module 3
+# M3-Industrial-IT - Gestion de Chariot Industriel
 
-TODO
-📌 ÉTAPE 1 : CRÉATION DE LA BASE DE DONNÉES (MySQL)
-1.1. Script SQL pour créer les tables
+## 📝 Présentation du projet
+Ce répertoire contient le travail collaboratif sur le module 3, portant sur la conception et le développement d'un système de gestion de chariot industriel. Le projet intègre une base de données MySQL, une interface de contrôle en C# (Windows Forms) et une logique de commande sur automate Codesys.
+
+## 📍 Sommaire
+1. [Étape 1 : Création de la base de données (MySQL)](#étape-1--création-de-la-base-de-données-mysql)
+2. [Étape 2 : Développement de l'application C# (Windows Forms)](#étape-2--développement-de-lapplication-c-windows-forms)
+3. [Étape 3 : Développement de l'automate (Codesys)](#étape-3--développement-de-lautomate-codesys)
+4. [Étape 4 : Communication entre C# et Codesys](#étape-4--communication-entre-c-et-codesys)
+5. [Étape 5 : Tests et Validation](#étape-5--tests-et-validation)
+6. [Étape 6 : Documentation et Livrables](#étape-6--documentation-et-livrables)
+7. [Journal de travail](#journal-de-travail)
+8. [Checklist Finale](#checklist-finale)
+9. [Conseils](#conseils)
+
+---
+
+## 🗄️ ÉTAPE 1 : CRÉATION DE LA BASE DE DONNÉES (MySQL)
+
+### 1.1. Script SQL pour créer les tables
 À partir du MCD, voici le script SQL pour créer la base de données :
+
+```sql
 -- Création de la base de données
 CREATE DATABASE IF NOT EXISTS GestionChariot;
 USE GestionChariot;
@@ -60,22 +77,25 @@ CREATE TABLE Evenement (
     Date_Heure_message DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (Id_Lot) REFERENCES Lot(Id_Lot) ON DELETE CASCADE
 );
-1.2. Contraintes à respecter
+```
 
-Cycle vérin :
-Si Cycle_verin = true → Le Temps_attente est ignoré (mis à 0).
-Si Cycle_verin = false → Le Temps_attente doit être renseigné.
+### 1.2. Contraintes à respecter
 
+- **Cycle vérin :**
+  - Si `Cycle_verin = true` → Le `Temps_attente` est ignoré (mis à 0).
+  - Si `Cycle_verin = false` → Le `Temps_attente` doit être renseigné.
 
-Quittance :
-Si Quittance = true → L’opérateur doit valider manuellement l’opération avant de passer à la suivante.
+- **Quittance :**
+  - Si `Quittance = true` → L’opérateur doit valider manuellement l’opération avant de passer à la suivante.
 
+---
 
+## 💻 ÉTAPE 2 : DÉVELOPPEMENT DE L'APPLICATION C# (Windows Forms)
 
-
-📌 ÉTAPE 2 : DÉVELOPPEMENT DE L'APPLICATION C# (Windows Forms)
-2.1. Structure du projet
+### 2.1. Structure du projet
 Créez un projet Windows Forms dans Visual Studio avec les classes suivantes :
+
+```
 GestionChariot/
 ├── Models/          # Classes C# correspondant aux tables SQL
 │   ├── Recette.cs
@@ -93,8 +113,12 @@ GestionChariot/
     ├── RecetteForm.cs       # Éditeur de recettes
     ├── LotForm.cs           # Éditeur de lots
     └── TraçabiliteForm.cs   # Visualisation des événements
-2.2. Exemple de code pour les modèles
-📄 Models/Recette.cs
+```
+
+### 2.2. Exemple de code pour les modèles
+
+📄 **Models/Recette.cs**
+```csharp
 public class Recette
 {
     public int Id_Recette { get; set; }
@@ -102,7 +126,10 @@ public class Recette
     public DateTime Date_Heure_creation { get; set; }
     public List<Operation> Operations { get; set; } = new List<Operation>();
 }
-📄 Models/Operation.cs
+```
+
+📄 **Models/Operation.cs**
+```csharp
 public class Operation
 {
     public int Id_Operation { get; set; }
@@ -114,8 +141,12 @@ public class Operation
     public bool Quittance { get; set; }
     public bool Sens_moteur { get; set; } // false = avant, true = arrière
 }
-2.3. Connexion à la base de données
-📄 Services/DatabaseService.cs
+```
+
+### 2.3. Connexion à la base de données
+
+📄 **Services/DatabaseService.cs**
+```csharp
 using MySql.Data.MySqlClient;
 
 public class DatabaseService
@@ -127,7 +158,10 @@ public class DatabaseService
         return new MySqlConnection(_connectionString);
     }
 }
-📄 Services/RecetteService.cs
+```
+
+📄 **Services/RecetteService.cs**
+```csharp
 public class RecetteService
 {
     private readonly DatabaseService _dbService;
@@ -192,8 +226,12 @@ public class RecetteService
         }
     }
 }
-2.4. Interface graphique (Windows Forms)
-📄 Forms/RecetteForm.cs
+```
+
+### 2.4. Interface graphique (Windows Forms)
+
+📄 **Forms/RecetteForm.cs**
+```csharp
 public partial class RecetteForm : Form
 {
     private readonly RecetteService _recetteService;
@@ -250,7 +288,10 @@ public partial class RecetteForm : Form
         MessageBox.Show("Opération ajoutée avec succès !");
     }
 }
-📄 Forms/LotForm.cs
+```
+
+📄 **Forms/LotForm.cs**
+```csharp
 public partial class LotForm : Form
 {
     private readonly LotService _lotService;
@@ -298,15 +339,19 @@ public partial class LotForm : Form
         LoadLots();
     }
 }
+```
 
-📌 ÉTAPE 3 : DÉVELOPPEMENT DE L'AUTOMATE (CODESYS)
-3.1. Communication avec MySQL depuis Codesys
+---
+
+## 🤖 ÉTAPE 3 : DÉVELOPPEMENT DE L'AUTOMATE (CODESYS)
+
+### 3.1. Communication avec MySQL depuis Codesys
 Codesys ne supporte pas nativement MySQL, mais vous pouvez utiliser :
+- Un serveur OPC UA pour faire le lien entre Codesys et C#.
+- Un script Python qui lit/écrit dans MySQL et communique avec Codesys via Modbus TCP.
 
-Un serveur OPC UA pour faire le lien entre Codesys et C#.
-Un script Python qui lit/écrit dans MySQL et communique avec Codesys via Modbus TCP.
-
-Exemple de structure Codesys
+**Exemple de structure Codesys**
+```
 GestionChariot (Codesys Project)
 ├── PLC_PRG (Programme principal)
 │   ├── VAR
@@ -321,7 +366,11 @@ GestionChariot (Codesys Project)
 └── Communication
     ├── ModbusTCP_Server;              // Pour communiquer avec un script Python
     └── OPCUA_Server;                  // Alternative
-3.2. Exemple de code Codesys (ST)
+```
+
+### 3.2. Exemple de code Codesys (IEC 61131-3 ST)
+
+```iecst
 PROGRAM PLC_PRG
 VAR
     currentLot : Lot;
@@ -373,22 +422,22 @@ IF isRunning THEN
         isRunning := FALSE;
     END_IF
 END_IF
+```
 
-📌 ÉTAPE 4 : COMMUNICATION ENTRE C# ET CODESYS
-Option 1 : OPC UA (Recommandé)
+---
 
-Dans Codesys :
+## 🔌 ÉTAPE 4 : COMMUNICATION ENTRE C# ET CODESYS
 
-Activez le serveur OPC UA (Projet → Communication → OPC UA).
-Déclarez les variables à exposer (ex : currentLot, isRunning).
+### Option 1 : OPC UA (Recommandé)
 
+1. **Dans Codesys :**
+   - Activez le serveur OPC UA (Projet → Communication → OPC UA).
+   - Déclarez les variables à exposer (ex : `currentLot`, `isRunning`).
 
-Dans C# :
+2. **Dans C# :**
+   - Utilisez la bibliothèque `OPCFoundation/UA-.NET` pour lire/écrire les variables Codesys.
 
-Utilisez la bibliothèque OPCFoundation/UA-.NET pour lire/écrire les variables Codesys.
-
-
-
+```csharp
 using Opc.Ua;
 using Opc.Ua.Client;
 
@@ -426,15 +475,17 @@ public class OpcUaService
         });
     }
 }
-Option 2 : Modbus TCP + Script Python
+```
 
-Dans Codesys :
+### Option 2 : Modbus TCP + Script Python
 
-Configurez un serveur Modbus TCP (Projet → Communication → Modbus TCP Server).
-Mappez les variables à des registres Modbus.
+1. **Dans Codesys :**
+   - Configurez un serveur Modbus TCP (Projet → Communication → Modbus TCP Server).
+   - Mappez les variables à des registres Modbus.
 
+2. **Script Python (intermédiaire) :**
 
-Script Python (intermédiaire) :
+```python
 from pymodbus.client import ModbusTcpClient
 import mysql.connector
 
@@ -467,14 +518,18 @@ while True:
         client.write_register(0, lot[0])  # Id_Lot
         client.write_register(1, lot[3])  # Id_Recette
         update_lot_state(lot[0], 2)      # 2 = En cours
+```
 
+---
 
+## 🧪 ÉTAPE 5 : TESTS ET VALIDATION
 
-📌 ÉTAPE 5 : TESTS ET VALIDATION
-5.1. Tests unitaires (C#)
-
+### 5.1. Tests unitaires (C#)
 Testez chaque méthode des Services avec des données fictives.
-Exemple pour RecetteService :[TestMethod]
+
+📄 **Exemple pour RecetteService :**
+```csharp
+[TestMethod]
 public void AddRecette_ShouldInsertIntoDatabase()
 {
     var dbService = new DatabaseService();
@@ -486,156 +541,65 @@ public void AddRecette_ShouldInsertIntoDatabase()
     var recettes = recetteService.GetAllRecettes();
     Assert.IsTrue(recettes.Any(r => r.Nom == "TestRecette"));
 }
-
-
-5.2. Tests d'intégration (C# ↔ MySQL ↔ Codesys)
-
-Créez un lot dans l’application C#.
-Vérifiez qu’il apparaît dans la base de données.
-Lancez la production dans Codesys et vérifiez que :
-Le lot passe en état "En cours".
-Les événements sont enregistrés dans Evenement.
-Le lot passe en état "Terminé" à la fin.
-
-
-
-5.3. Gestion des erreurs
-
-Alarmes : Simulez une coupure de barrière lumineuse dans Codesys et vérifiez que le lot passe en "Erreur".
-Quittance manuelle : Testez le cas où une opération nécessite une validation de l’opérateur.
-
-
-📌 ÉTAPE 6 : DOCUMENTATION ET LIVRABLES
-6.1. Cahier des charges (orienté client)
-
-Description du projet :
-Objectifs, acteurs, processus métier.
-
-
-Fonctionnalités :
-Éditeur de lots/recettes (C#).
-Traçabilité (historique des événements).
-Gestionnaire de production (Codesys).
-
-
-Maquettes :
-Ajoutez des captures d’écran des interfaces C# et Codesys.
-
-
-Base de données :
-MCD + dictionnaire de données.
-
-
-
-6.2. Documentation technique
-
-Architecture :
-Diagramme de déploiement (C# ↔ MySQL ↔ Codesys).
-
-
-Code :
-Commentaires dans le code.
-Explications des algorithmes critiques (ex : gestion des opérations dans Codesys).
-
-
-Manuel utilisateur :
-Guide pour créer un lot/recette.
-Guide pour lancer une production dans Codesys.
-
-
-
-6.3. Journal de travail
-
-Exemple de format :Copier le tableau
-
-
-Date
-Heure début
-Heure fin
-Activité
-Catégorie
-Durée
-
-
-
-20.03.2026
-08:30
-10:00
-Création du MCD
-Conception BDD
-1.5h
-
-
-21.03.2026
-13:00
-15:30
-Développement RecetteService (C#)
-Développement
-2.5h
-
-
-
-
-
-📌 CHECKLIST FINALE
-
-
-
-Tâche
-Statut
-
-
-
-Base de données créée (MySQL)
-⬜
-
-
-MCD et dictionnaire de données validés
-⬜
-
-
-Application C# (Windows Forms) fonctionnelle
-⬜
-
-
-Automate Codesys opérationnel
-⬜
-
-
-Communication C# ↔ Codesys (OPC UA/Modbus)
-⬜
-
-
-Tests unitaires et d'intégration passés
-⬜
-
-
-Documentation complète
-⬜
-
-
-Journal de travail à jour
-⬜
-
-
-
-Conseils // BDD First
-
-Commencez par la base de données :
-Une BDD bien conçue simplifie tout le reste.
-
-
-Développez par itérations :
-D’abord la partie C# (éditeur de lots/recettes), puis Codesys, puis la communication.
-
-
-Testez tôt :
-Ne laissez pas les tests pour la fin. Testez chaque fonctionnalité dès qu’elle est codée.
-
-
-Utilisez Git :
-Versionnez votre code pour éviter les pertes (GitHub/GitLab).
-
-
-Demandez des feedbacks :
-Montrez vos maquettes et votre code aux enseignants pour avoir des retours.
+```
+
+### 5.2. Tests d'intégration (C# ↔ MySQL ↔ Codesys)
+1. Créez un lot dans l’application C#.
+2. Vérifiez qu’il apparaît dans la base de données.
+3. Lancez la production dans Codesys et vérifiez que :
+   - Le lot passe en état "En cours".
+   - Les événements sont enregistrés dans `Evenement`.
+   - Le lot passe en état "Terminé" à la fin.
+
+### 5.3. Gestion des erreurs
+- **Alarmes :** Simulez une coupure de barrière lumineuse dans Codesys et vérifiez que le lot passe en "Erreur".
+- **Quittance manuelle :** Testez le cas où une opération nécessite une validation de l’opérateur.
+
+---
+
+## 📚 ÉTAPE 6 : DOCUMENTATION ET LIVRABLES
+
+### 6.1. Cahier des charges (orienté client)
+- **Description du projet :** Objectifs, acteurs, processus métier.
+- **Fonctionnalités :** Éditeur de lots/recettes (C#), Traçabilité, Gestionnaire de production (Codesys).
+- **Maquettes :** Ajoutez des captures d’écran des interfaces C# et Codesys.
+- **Base de données :** MCD + dictionnaire de données.
+
+### 6.2. Documentation technique
+- **Architecture :** Diagramme de déploiement (C# ↔ MySQL ↔ Codesys).
+- **Code :** Commentaires dans le code, explications des algorithmes critiques.
+- **Manuel utilisateur :** Guide pour créer un lot/recette et lancer une production.
+
+---
+
+## 🗓️ Journal de travail
+
+| Date | Heure début | Heure fin | Activité | Catégorie | Durée |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 20.03.2026 | 08:30 | 10:00 | Création du MCD | Conception BDD | 1.5h |
+| 21.03.2026 | 13:00 | 15:30 | Développement RecetteService (C#) | Développement | 2.5h |
+
+---
+
+## 📋 CHECKLIST FINALE
+
+| Tâche | Statut |
+| :--- | :---: |
+| Base de données créée (MySQL) | ⬜ |
+| MCD et dictionnaire de données validés | ⬜ |
+| Application C# (Windows Forms) fonctionnelle | ⬜ |
+| Automate Codesys opérationnel | ⬜ |
+| Communication C# ↔ Codesys (OPC UA/Modbus) | ⬜ |
+| Tests unitaires et d'intégration passés | ⬜ |
+| Documentation complète | ⬜ |
+| Journal de travail à jour | ⬜ |
+
+---
+
+## 💡 Conseils // BDD First
+
+1. **Commencez par la base de données :** Une BDD bien conçue simplifie tout le reste.
+2. **Développez par itérations :** D’abord la partie C# (éditeur de lots/recettes), puis Codesys, puis la communication.
+3. **Testez tôt :** Ne laissez pas les tests pour la fin. Testez chaque fonctionnalité dès qu’elle est codée.
+4. **Utilisez Git :** Versionnez votre code pour éviter les pertes (GitHub/GitLab).
+5. **Demandez des feedbacks :** Montrez vos maquettes et votre code aux enseignants pour avoir des retours.
